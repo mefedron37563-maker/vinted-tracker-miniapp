@@ -1,0 +1,83 @@
+    <!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#121a2b">
+  <title>Vinted Tracker</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { color-scheme: dark; --bg:#101827; --panel:#182437; --muted:#a9b5c8; --text:#f3f6fb; --accent:#a6f06b; --line:#2b3a50; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:18px 16px calc(24px + env(safe-area-inset-bottom)); background:radial-gradient(90% 45% at 10% 0%, #263958 0, transparent 70%), var(--bg); color:var(--text); font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:560px; margin:0 auto; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.13em; font-weight:750; font-size:11px; }
+    h1 { margin:7px 0 4px; font-size:clamp(26px,7vw,34px); line-height:1.1; letter-spacing:-.04em; }
+    .intro { margin:0 0 20px; color:var(--muted); font-size:14px; }
+    .panel { border:1px solid var(--line); border-radius:22px; padding:18px; background:rgba(24,36,55,.95); box-shadow:0 16px 42px #0002; }
+    label { display:block; margin:13px 0 6px; color:#d9e2ef; font-weight:650; font-size:13px; }
+    input, select { width:100%; min-height:48px; border:1px solid #354760; border-radius:12px; padding:12px 13px; background:#111c2d; color:var(--text); font:inherit; outline:none; }
+    input:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px #a6f06b20; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .row label { margin-top:13px; }
+    .hint { margin:9px 0 0; color:var(--muted); font-size:12px; }
+    button { width:100%; margin-top:17px; min-height:50px; padding:13px 16px; border:0; border-radius:13px; background:var(--accent); color:#172514; font-weight:800; font-size:15px; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:default; }
+    .foot { margin:14px 2px 0; font-size:11px; color:#8998ad; text-align:center; }
+    #status { display:none; margin-top:12px; padding:11px 12px; background:#263a30; border:1px solid #426344; border-radius:12px; font-size:13px; }
+    .pill { display:inline-block; margin-top:8px; border:1px solid #354760; border-radius:999px; padding:5px 9px; color:var(--muted); font-size:11px; }
+    @media (max-width:360px) { body { padding:14px 12px; } .panel { padding:14px; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Search studio · Vinted</div>
+  <h1>Найди свою вещь.</h1>
+  <p class="intro">Сохрани параметры поиска — бот пришлёт ссылку на поиск и сможет проверять письма-уведомления Vinted, если подключена почта.</p>
+  <section class="panel">
+    <form id="search-form">
+      <label for="brand">Бренд</label>
+      <input id="brand" name="brand" placeholder="Например, Stone Island" maxlength="80" required autocomplete="off">
+      <label for="item">Название вещи / модели</label>
+      <input id="item" name="item" placeholder="Например, Overshirt или Off Dye" maxlength="100" required autocomplete="off">
+      <div class="row">
+        <div><label for="min">Цена от</label><input id="min" type="number" min="0" step="0.01" placeholder="150" required></div>
+        <div><label for="max">Цена до</label><input id="max" type="number" min="0.01" step="0.01" placeholder="200" required></div>
+      </div>
+      <label for="currency">Валюта диапазона</label>
+      <select id="currency"><option value="EUR">EUR · €</option><option value="USD">USD · $</option><option value="GBP">GBP · £</option></select>
+      <p class="hint">Числа в фильтре Vinted не конвертируются автоматически. Используйте валюту выбранного рынка.</p>
+      <button id="save" type="submit">Сохранить поиск в боте</button>
+      <div id="status" role="status"></div>
+    </form>
+    <span class="pill">Один поиск — одна карточка в сохранённых</span>
+  </section>
+  <p class="foot">Мини-приложение передаёт форму вашему Telegram-боту. Не вводите здесь пароли Vinted или почты.</p>
+</main>
+<script>
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  const form = document.getElementById('search-form');
+  const statusBox = document.getElementById('status');
+  const saveButton = document.getElementById('save');
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const brand = document.getElementById('brand').value.trim();
+    const item_name = document.getElementById('item').value.trim();
+    const min_price = Number(document.getElementById('min').value);
+    const max_price = Number(document.getElementById('max').value);
+    const currency = document.getElementById('currency').value;
+    if (brand.length < 2 || item_name.length < 2 || !Number.isFinite(min_price) || !Number.isFinite(max_price) || min_price < 0 || max_price <= 0 || min_price > max_price) {
+      statusBox.style.display = 'block'; statusBox.textContent = 'Проверьте поля и диапазон цены.'; return;
+    }
+    if (!tg || typeof tg.sendData !== 'function') {
+      statusBox.style.display = 'block'; statusBox.textContent = 'Откройте эту страницу через кнопку мини-приложения внутри Telegram, чтобы сохранить поиск.'; return;
+    }
+    saveButton.disabled = true;
+    saveButton.textContent = 'Отправляем…';
+    tg.sendData(JSON.stringify({brand, item_name, min_price, max_price, currency}));
+    statusBox.style.display = 'block'; statusBox.textContent = 'Данные отправлены боту. Вернитесь в чат Telegram.';
+  });
+</script>
+</body>
+</html>
