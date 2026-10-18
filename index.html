@@ -45,8 +45,10 @@
         <div><label for="max">Цена до</label><input id="max" type="number" min="0.01" step="0.01" placeholder="200" required></div>
       </div>
       <label for="currency">Валюта диапазона</label>
-      <select id="currency"><option value="EUR">EUR · €</option><option value="USD">USD · $</option><option value="GBP">GBP · £</option></select>
-      <p class="hint">Числа в фильтре Vinted не конвертируются автоматически. Используйте валюту выбранного рынка.</p>
+<select id="currency">
+  <option value="PLN" selected>PLN · zł (польские злотые)</option>
+</select>
+<p class="hint">Указывайте цены в польских злотых (zł).</p>
       <button id="save" type="submit">Сохранить поиск в боте</button>
       <div id="status" role="status"></div>
     </form>
@@ -66,7 +68,7 @@
     const item_name = document.getElementById('item').value.trim();
     const min_price = Number(document.getElementById('min').value);
     const max_price = Number(document.getElementById('max').value);
-    const currency = document.getElementById('currency').value;
+    const currency = 'PLN';
     if (brand.length < 2 || item_name.length < 2 || !Number.isFinite(min_price) || !Number.isFinite(max_price) || min_price < 0 || max_price <= 0 || min_price > max_price) {
       statusBox.style.display = 'block'; statusBox.textContent = 'Проверьте поля и диапазон цены.'; return;
     }
